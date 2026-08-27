@@ -85,8 +85,8 @@ jobs:
       - name: Create Release with APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${ github.run_number }
-          name: APK AppMint v1.0.${ github.run_number }
+          tag_name: v1.0.${{ github.run_number }}
+          name: APK AppMint v1.0.${{ github.run_number }}
           body: |
             APK generado automaticamente con AppMint Studio.
             Descarga e instala el archivo .apk en tu telefono
