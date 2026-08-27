@@ -2,6 +2,8 @@ name: Build Android APK
 
 on:
   push:
+    paths-ignore:
+      - '.appmint/**'
   workflow_dispatch:
 
 permissions:
@@ -53,7 +55,20 @@ jobs:
           cat gradle.properties 2>/dev/null || echo '(sin gradle.properties)'
 
       - name: Build APK and AAB
-        run: gradle --no-daemon assembleRelease bundleRelease
+        run: |
+          mkdir -p .appmint
+          set +e
+          gradle --no-daemon --stacktrace assembleRelease bundleRelease 2>&1 | tee .appmint/build-log.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Guardar log del fallo en el repositorio
+        if: failure()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .appmint/build-log.txt 2>/dev/null || true
+          git commit -m "appmint: log del fallo" --allow-empty || true
+          git push || true
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
