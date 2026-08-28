@@ -1,7 +1,7 @@
 {
   "name": "Reloj",
   "slug": "reloj",
-  "package": "com.appmint.reloj",
+  "package": "com.appmint.miapp",
   "versionName": "1.0.0",
   "versionCode": 1,
   "primary": "#7c3aed",
