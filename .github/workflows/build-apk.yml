@@ -17,10 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Set up Android SDK
@@ -30,7 +30,6 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
           sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null 2>&1 || true
-          echo "ANDROID_HOME=$ANDROID_HOME"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -44,21 +43,15 @@ jobs:
           python3 _tpl/build.py .
           rm -rf tpl.zip _tpl
 
-      - name: Debug - estructura y archivos generados
-        run: |
-          find . -type f -not -path './.git/*' | sort
-          echo '===== settings.gradle ====='
-          cat settings.gradle 2>/dev/null || echo '(sin settings.gradle)'
-          echo '===== app/build.gradle ====='
-          cat app/build.gradle 2>/dev/null || echo '(sin app/build.gradle)'
-          echo '===== gradle.properties ====='
-          cat gradle.properties 2>/dev/null || echo '(sin gradle.properties)'
+      - name: Dar permisos de ejecucion a gradlew (si existe)
+        run: chmod +x gradlew 2>/dev/null || true
 
       - name: Build APK and AAB
         run: |
           mkdir -p .appmint
           set +e
-          gradle --no-daemon --stacktrace assembleRelease bundleRelease 2>&1 | tee .appmint/build-log.txt
+          # Si no tienes firmas configuradas en build.gradle, usa assembleDebug
+          gradle --no-daemon --stacktrace assembleDebug bundleRelease 2>&1 | tee .appmint/build-log.txt
           exit ${PIPESTATUS[0]}
 
       - name: Guardar log del fallo en el repositorio
@@ -74,13 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: APK-Instalable
-          path: app/build/outputs/apk/release/*.apk
-
-      - name: Upload AAB artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AAB-GooglePlay
-          path: app/build/outputs/bundle/release/*.aab
+          path: app/build/outputs/apk/**/*.apk
 
       - name: Create Release with APK
         uses: softprops/action-gh-release@v2
@@ -88,8 +75,6 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: APK AppMint v1.0.${{ github.run_number }}
           body: |
-            APK generado automaticamente con AppMint Studio.
-            Descarga e instala el archivo .apk en tu telefono
-            (permite instalar aplicaciones de origenes desconocidos).
-          files: app/build/outputs/apk/release/*.apk
+            APK generado automáticamente con AppMint Studio.
+          files: app/build/outputs/apk/**/*.apk
           fail_on_unmatched_files: false
